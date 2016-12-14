@@ -1,0 +1,104 @@
+// This #include statement was automatically added by the Particle IDE.
+#include "LiquidCrystal/LiquidCrystal.h"
+
+
+LiquidCrystal lcd(5, 4, 3, 2, 1, 0);
+
+
+int led = A0;
+int buttonPin = D7;
+String myId = System.deviceID();
+
+String me;
+String next;
+
+unsigned long buttonTime; 
+
+
+bool buttonPressed = false;
+//char *eventName = "rghrngvtrotugrjhgn";
+
+//This function is called after the Photon has started 
+void setup(){
+    
+     lcd.begin(16, 2);
+    // lcd.print("chores 11/17");
+    
+    
+    //We set the pin mode to output
+    pinMode(led, OUTPUT);
+    pinMode(buttonPin, INPUT_PULLUP);
+    //We "Subscribe" to our IFTTT event called button so that we get events for it 
+    
+    if (myId.equals("290045000851353531343431")) { // device ID
+        me = "homework";
+        next = "chores";
+    } else {
+        me = "chores";
+        next = "homework";
+    }
+    
+     lcd.print(me + " 11/17");
+     
+    // TO add a new device, create an if/else referencing the last "next" object
+    
+
+    
+    Particle.subscribe(me, myHandler, MY_DEVICES);
+}
+//The program loop, not sure if this has to be here for the program to run or not
+void loop() {
+    
+   
+    
+    
+     lcd.setCursor(0, 1);
+        lcd.print((millis() - buttonTime) /1000);
+    
+    if(buttonPressed){
+        if(digitalRead(buttonPin) == HIGH) {
+            Particle.publish(next, "HIGH", 60, PRIVATE);
+            buttonPressed = false; 
+            lcd.clear();
+            
+        }
+    }
+    
+    else{
+        if(digitalRead(buttonPin) == LOW) {
+            Particle.publish(next, "LOW", 60, PRIVATE);
+            buttonPressed = true; 
+        }
+    }
+    
+    Serial.println(buttonPin);
+    
+      if (millis() - buttonTime > 10000){ 
+   digitalWrite(led, LOW);
+}
+    
+}
+//The function that handles the event from IFTTT
+void myHandler(const char *event, const char *data){
+    // We'll turn the LED on
+  
+    if(strcmp(data, "HIGH")==0){ 
+        digitalWrite(led, HIGH);
+         lcd.clear();
+         buttonTime = millis(); 
+         lcd.print(me + " 11/17");
+        
+    }
+    
+     if(strcmp(data, "LOW")==0){ 
+        digitalWrite(led, LOW);
+        
+    }
+    
+    
+    // We'll leave it on for 10 seconds...
+    
+    
+    // Then we'll turn it off...
+
+}
