@@ -1,0 +1,151 @@
+// I am currently having trouble getting 3 of my particle boards to subscribe and publish together.
+//Each board works independently, and two boards can communicate. But I am having trouble communicating with all 3. 
+// I am thinking the problem might lie in my particle subscribe function, because I am getting published data to the console, but 
+// the 3rd board is still not responding. 
+
+
+// This #include statement was automatically added by the Particle IDE.
+#include "lib1.h"
+
+// This #include statement was automatically added by the Particle IDE.
+#include "LiquidCrystal/LiquidCrystal.h"
+
+//The pin you want to control, in this case I'm blinking the on-board blue LED on digital pin 7
+LiquidCrystal lcd(5, 4, 3, 2, 1, 0);
+
+
+int ledPin = A0;
+int buttonPin = D7;
+
+String myId;
+
+char* board1_Task = "homework";
+char* board2_Task = "chores"; 
+char* board3_Task = "dinner with mom"; 
+
+unsigned long buttonTime; 
+
+String board1_id = "290045000851353531343431" ;
+String board2_id = "300044000e51353338363333" ;
+String board3_id = "3b0032001551353531343431" ; 
+
+String currenttask, nexttask ; 
+
+
+bool buttonPressed = false;
+bool initialized = false;
+bool timerStarted = false;
+//char *eventName = "rghrngvtrotugrjhgn";
+
+void initializeLCD(const char *event, const char *data);
+
+//This function is called after the Photon has started 
+void setup(){
+    
+     lcd.begin(16, 2);
+    // lcd.print("chores 11/17");
+    
+    myId = System.deviceID();
+    
+    
+    //We set the pin mode to output
+    pinMode(ledPin, OUTPUT);
+    pinMode(buttonPin, INPUT_PULLUP);
+    //We "Subscribe" to our IFTTT event called button so that we get events for it 
+    
+    if (myId.equals(board1_id)) { // device ID
+        currenttask = board1_Task;
+        nexttask = board2_Task; 
+     
+        initializeLCD(currenttask, "HIGH");
+        
+    } else if (myId.equals(board2_id)){
+        currenttask = board2_Task; 
+        nexttask = board3_Task; 
+        
+    } else if (myId.equals(board3_id)){
+        currenttask = board3_Task;
+        nexttask = board1_Task;
+    }
+    else { 
+        //TODO: fix
+    }
+    
+     
+    // TO add a new device, create an if/else referencing the last "next" object
+    
+
+    Particle.subscribe(currenttask, initializeLCD, MY_DEVICES);
+}
+
+//The program loop, not sure if this has to be here for the program to run or not
+void loop() {
+    
+    if (timerStarted) {
+        lcd.setCursor(0, 1);
+        lcd.print((millis() - buttonTime) / 1000);
+    }
+    
+    if (buttonPressed){
+        if (digitalRead(buttonPin) == HIGH) {
+            if (timerStarted) {
+                Particle.publish(nexttask, "HIGH", 60, PRIVATE); // Change string to something useful 
+                buttonPressed = false; 
+                lcd.clear();
+            }
+            else {
+                startTimer();
+            }
+        }
+    }
+    
+    else {
+        if (digitalRead(buttonPin) == LOW) {
+            Particle.publish(nexttask, "LOW", 60, PRIVATE);
+            buttonPressed = true; 
+        }
+    }
+    
+    Serial.println(buttonPin);
+    
+    if (millis() - buttonTime > 10000){ 
+        digitalWrite(ledPin, LOW);
+    }
+}
+
+//The function that handles the event from IFTTT
+void initializeLCD(const char *event, const char *data){
+    // We'll turn the LED on
+  
+    if(strcmp(data, "HIGH")==0){ 
+        digitalWrite(ledPin, HIGH);
+        lcd.clear();
+        
+        lcd.setCursor(0, 0);
+        lcd.print(currenttask + " 11/17");
+    
+        initialized = true;
+        timerStarted = false;
+    }
+    
+     if(strcmp(data, "LOW")==0){ 
+        digitalWrite(ledPin, LOW);
+        
+    }
+    
+    Serial.println("TELL ME STUFF"); 
+    
+    
+    // We'll leave it on for 10 seconds...
+    
+    
+    // Then we'll turn it off...
+
+}
+
+void startTimer(){ 
+    
+    buttonTime = millis(); 
+    timerStarted = true;
+}
+    
